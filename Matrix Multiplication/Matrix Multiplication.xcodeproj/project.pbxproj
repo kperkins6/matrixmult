@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		AB3D08281CA762C90074B7EE /* matrixmult.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AB3D08271CA762C90074B7EE /* matrixmult.cpp */; };
+		AB3D082F1CA767050074B7EE /* mpi_mat_vect_time.c in Sources */ = {isa = PBXBuildFile; fileRef = AB3D082E1CA767050074B7EE /* mpi_mat_vect_time.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -25,6 +26,7 @@
 /* Begin PBXFileReference section */
 		AB3D08241CA762C90074B7EE /* Matrix Multiplication */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "Matrix Multiplication"; sourceTree = BUILT_PRODUCTS_DIR; };
 		AB3D08271CA762C90074B7EE /* matrixmult.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = matrixmult.cpp; sourceTree = "<group>"; };
+		AB3D082E1CA767050074B7EE /* mpi_mat_vect_time.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = mpi_mat_vect_time.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -58,6 +60,7 @@
 			isa = PBXGroup;
 			children = (
 				AB3D08271CA762C90074B7EE /* matrixmult.cpp */,
+				AB3D082E1CA767050074B7EE /* mpi_mat_vect_time.c */,
 			);
 			path = "Matrix Multiplication";
 			sourceTree = "<group>";
@@ -118,6 +121,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AB3D082F1CA767050074B7EE /* mpi_mat_vect_time.c in Sources */,
 				AB3D08281CA762C90074B7EE /* matrixmult.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
