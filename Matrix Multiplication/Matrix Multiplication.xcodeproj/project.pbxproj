@@ -10,6 +10,7 @@
 		AB3D08281CA762C90074B7EE /* matrixmult.c in Sources */ = {isa = PBXBuildFile; fileRef = AB3D08271CA762C90074B7EE /* matrixmult.c */; };
 		AB3D082F1CA767050074B7EE /* mpi_mat_vect_time.c in Sources */ = {isa = PBXBuildFile; fileRef = AB3D082E1CA767050074B7EE /* mpi_mat_vect_time.c */; };
 		AB3D08311CA77C210074B7EE /* Makefile in Sources */ = {isa = PBXBuildFile; fileRef = AB3D08301CA77C200074B7EE /* Makefile */; };
+		AB3D08331CA9D6F60074B7EE /* matrixmult2.c in Sources */ = {isa = PBXBuildFile; fileRef = AB3D08321CA9D6F60074B7EE /* matrixmult2.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -29,6 +30,7 @@
 		AB3D08271CA762C90074B7EE /* matrixmult.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = matrixmult.c; sourceTree = "<group>"; };
 		AB3D082E1CA767050074B7EE /* mpi_mat_vect_time.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = mpi_mat_vect_time.c; sourceTree = "<group>"; };
 		AB3D08301CA77C200074B7EE /* Makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
+		AB3D08321CA9D6F60074B7EE /* matrixmult2.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = matrixmult2.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -62,6 +64,7 @@
 			isa = PBXGroup;
 			children = (
 				AB3D08271CA762C90074B7EE /* matrixmult.c */,
+				AB3D08321CA9D6F60074B7EE /* matrixmult2.c */,
 				AB3D082E1CA767050074B7EE /* mpi_mat_vect_time.c */,
 				AB3D08301CA77C200074B7EE /* Makefile */,
 			);
@@ -127,6 +130,7 @@
 				AB3D08311CA77C210074B7EE /* Makefile in Sources */,
 				AB3D082F1CA767050074B7EE /* mpi_mat_vect_time.c in Sources */,
 				AB3D08281CA762C90074B7EE /* matrixmult.c in Sources */,
+				AB3D08331CA9D6F60074B7EE /* matrixmult2.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -245,6 +249,7 @@
 				AB3D082D1CA762C90074B7EE /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

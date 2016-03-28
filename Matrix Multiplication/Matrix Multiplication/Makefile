@@ -1,5 +1,5 @@
-matrixmult: matrixmult.c
-    mpicc -g -Wall -o matrixmult matrixmult.c
+matrixmult: matrixmult2.c
+    mpicc -g -Wall -o matrixmult matrixmult2.c
 
 .PHONY: clean
 

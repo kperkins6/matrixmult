@@ -19,15 +19,15 @@ void Get_dims( int* n_p, int* local_n_p,
 void Allocate_arrays(double** local_A_pp, double** local_B_pp,
                      double** local_C_pp, int   int n, int local_n,
                      MPI_Comm comm);
-void Read_matrix(char prompt[], double local_A[], int m, int  
+void Read_matrix(char prompt[], double local_A[],
                  int n, int my_rank, MPI_Comm comm);
 void Read_vector(char prompt[], double local_vec[], int n, int local_n,
                  int my_rank, MPI_Comm comm);
 void Generate_matrix(double local_A[], int   int n);
-void Generate_vector(double local_B[], int local_n);
-void Print_matrix(char title[], double local_A[], int m, int  
+//void Generate_vector(double local_B[], int local_n);
+//void Print_matrix(char title[], double local_A[], int m, int  
                   int n, int my_rank, MPI_Comm comm);
-void Print_vector(char title[], double local_vec[], int n,
+//void Print_vector(char title[], double local_vec[], int n,
                   int local_n, int my_rank, MPI_Comm comm);
 void Mat_vect_mult(double local_A[], double local_B[],
                    double local_C[], int   int n, int local_n,
@@ -41,7 +41,7 @@ int main(void) {
     double* C;
     char* flag;
     char* form;
-    int m, n, local_n;
+    int n, local_n;
     int my_rank, comm_sz;
     MPI_Comm comm;
     double start, finish, loc_elapsed, elapsed;
@@ -74,7 +74,7 @@ int main(void) {
 
     }
 #  ifdef DEBUG
-    Print_matrix("A", local_A, m, n, my_rank, comm);
+//    Print_matrix("A", local_A, m, n, my_rank, comm);
 #  endif
     // Read_vector("x", local_B, n, local_n, my_rank, comm);
     Generate_vector(local_B, local_n);
@@ -97,7 +97,7 @@ int main(void) {
     MPI_Reduce(&loc_elapsed, &elapsed, 1, MPI_DOUBLE, MPI_MAX, 0, comm);
     
 #  ifdef DEBUG
-    Print_vector("C", local_C, m, my_rank, comm);
+    Print_vector("C", local_C, m,   my_rank, comm);
 #  endif
     
     if (my_rank == 0)
@@ -393,7 +393,7 @@ void ijk_mult(
     int i, k, j;
     for (i = 0; i < *local_n; i++) {
         for(j=0; j < *n; j++) {
-            local_C[i*(*n)+j] = 0;
+//            local_C[i*(*n)+j] = 0;
             for (k = 0; k < *n; k++) {
                 local_C[i*(*n)+j] += local_A[i*(*n)+k] * local_B[k*(*n)+j];
             }
@@ -427,7 +427,7 @@ void ikj_mult(
     int i, k, j;
     for (i = 0; i < *local_n; i++) {
         for (k = 0; k < *n; k++) {
-            local_C[i*(*n)+j] = 0;
+//            local_C[i*(*n)+j] = 0;
             for(j=0; j < *n; j++) {
                 local_C[i*(*n)+j] += localA[i*(*n)+k] * local_B[k*(*n)+j];
             }
@@ -461,7 +461,7 @@ void kij_mult(
     int i, k, j;
     for (k = 0; k < *n; k++) {
         for (i = 0; i < *local_n; i++) {
-            local_C[i*(*n)+j] = 0;
+//            local_C[i*(*n)+j] = 0;
             for(j=0; j < *n; j++) {
                 local_C[i*(*n)+j] += local_A[i*(*n)+k] * local_B[k*(*n)+j];
             }
