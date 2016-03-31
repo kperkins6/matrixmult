@@ -12,16 +12,19 @@
 #include <time.h>
 #include <string.h>
 
-void Get_dims( int* n_p, int* local_n_p, char* flag, char* form,
+void Get_dims( int* n_p, int* local_n_p, char* flag[], char* form,
                      int my_rank, int comm_sz, MPI_Comm comm);
 void Allocate_arrays( int** local_A_pp,  int** local_B_pp,
-                      int** local_C_pp, int   int n, int local_n,
+                      int** local_C_pp, int my_rank, int n, int local_n,
                      MPI_Comm comm);
 void Construct_form(  int local_A[],  int local_B[], int n,
                      char* flag );
 void Generate_matrix( int local_A[], int n);
-void Print_matrix(char title[],  int local_A[],
+void Print_matrix(char title[],  int local_A[], int local_n,
                   int n, int my_rank, MPI_Comm comm);
+void Check_for_error(int local_ok, char fname[], char message[],
+                     MPI_Comm comm);
+
 
 int main(void) {
      int* local_A;
@@ -40,11 +43,14 @@ int main(void) {
     MPI_Comm_size(comm, &comm_sz);
     MPI_Comm_rank(comm, &my_rank);
     
-    Get_dims(&n, &local_n, &flag,  &form, my_rank, comm_sz, comm);
-    Allocate_arrays(&local_A, &local_B, &local_C, &C, n, local_n, comm);
+    //Don’t worry about P > n.
+    Get_dims(&n, &local_n, flag,  form, my_rank, comm_sz, comm);
+    //In the case of n not evenly divisible by P.
+    //Give the last process all of the extra from N%P.
+    Allocate_arrays(&local_A, &local_B, &local_C, my_rank, n, local_n, comm);
     Construct_form(local_A, local_B, n, flag);
-    Print_matrix("A", local_A, local_n, n, my_rank, comm);
-    Print_matrix("B", local_B, local_n, n, my_rank, comm);
+    Print_matrix("A", local_A, local_n, local_n, n, my_rank, comm);
+    Print_matrix("B", local_B, local_n,  local_n, n, my_rank, comm);
     // Read_matrix("A", local_A, m,   n, my_rank, comm);
     
 //    MPI_Barrier(comm);
@@ -92,7 +98,7 @@ void Get_dims(
         printf("Enter the <flag>\n");
         scanf("%s", flag);
         printf("Enter the dimentions <n>\n");
-        scanf("%i", &n_p);
+        scanf("%i", n_p);
     }
     MPI_Bcast(n_p, 1, MPI_INT, 0, comm);
     if (*n_p <= 0 || *n_p % comm_sz != 0) local_ok = 0;
@@ -107,12 +113,13 @@ void Allocate_arrays(
                       int**  local_A_pp  /* out */,
                       int**  local_B_pp  /* out */,
                       int**  local_C_pp  /* out */,
+                     int       my_rank    /* in  */,
                      int       n           /* in  */,
                      int       local_n     /* in  */,
                      MPI_Comm  comm        /* in  */) {
     
     int local_ok = 1;
-    if (rank == 0) {
+    if (my_rank == 0) {
         *local_A_pp = malloc(n*n*sizeof( int));
         *local_B_pp = malloc(n*n*sizeof( int));
         *local_C_pp = malloc(n*n*sizeof( int));
@@ -169,16 +176,16 @@ void Generate_matrix(
 
 void Print_matrix(
                   char      title[]    /* in */,
-                   int    local_A[]  /* in */,
+                  int    local_A[]     /* in */,
                   int       local_n    /* in */,
                   int       n          /* in */,
                   int       my_rank    /* in */,
                   MPI_Comm  comm       /* in */) {
-     int* A = NULL;
+    int* A = NULL;
     int i, j, local_ok = 1;
     
     if (my_rank == 0) {
-        A = malloc(m*n*sizeof( int));
+        A = malloc(n*n*sizeof( int));
         if (A == NULL) local_ok = 0;
         Check_for_error(local_ok, "Print_matrix",
                         "Can't allocate temporary matrix", comm);
@@ -187,7 +194,7 @@ void Print_matrix(
         printf("\nThe matrix %s\n", title);
         for (i = 0; i < m; i++) {
             for (j = 0; j < n; j++)
-                printf("%f ", A[i*n+j]);
+                printf("%i ", A[i*n+j]);
             printf("\n");
         }
         printf("\n");
@@ -200,3 +207,24 @@ void Print_matrix(
     }
 }  /* Print_matrix */
 
+/*-------------------------------------------------------------------*/
+void Check_for_error(
+                     int       local_ok   /* in */,
+                     char      fname[]    /* in */,
+                     char      message[]  /* in */,
+                     MPI_Comm  comm       /* in */) {
+    int ok;
+    
+    MPI_Allreduce(&local_ok, &ok, 1, MPI_INT, MPI_MIN, comm);
+    if (ok == 0) {
+        int my_rank;
+        MPI_Comm_rank(comm, &my_rank);
+        if (my_rank == 0) {
+            fprintf(stderr, "Proc %d > In %s, %s\n", my_rank, fname,
+                    message);
+            fflush(stderr);
+        }
+        MPI_Finalize();
+        exit(-1);
+    }
+}  /* Check_for_error */
