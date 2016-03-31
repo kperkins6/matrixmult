@@ -31,8 +31,8 @@ int main(void) {
      int* local_B;
      int* local_C;
      int* C;
-    char* flag;
-    int* form;
+    char* flag = malloc(sizeof(char*));
+    int* form = malloc(sizeof(int));
     int n, local_n;
     int my_rank, comm_sz;
     MPI_Comm comm;
@@ -91,7 +91,7 @@ void Get_dims(
               int       comm_sz    /* in  */,
               MPI_Comm  comm       /* in  */) {
     int local_ok = 1;
-    char* temp;
+    char* temp = 3*malloc(sizeof(char*));
     if (my_rank == 0) {
         printf("Enter the <form>\n");
         scanf("%s", temp);
