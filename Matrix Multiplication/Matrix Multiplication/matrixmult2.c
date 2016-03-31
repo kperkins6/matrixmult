@@ -94,12 +94,12 @@ void Get_dims(
     char* temp;
     if (my_rank == 0) {
         printf("Enter the <form>\n");
-        scanf("%s", form);
-        printf("Enter the <flag>\n");
         scanf("%s", temp);
+        printf("Enter the <flag>\n");
+        scanf("%s", flag);
         if (strcmp(temp, "ijk"))
             *form = 1;
-        else if (strcmp(temp,, "ikj"))
+        else if (strcmp(temp, "ikj"))
             *form = 2;
         else *form = 3;
         printf("Enter the dimentions <n>\n");
