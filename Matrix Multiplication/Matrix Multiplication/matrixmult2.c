@@ -148,15 +148,15 @@ void Construct_form(
     if (my_rank == 0) {
         if (strcmp(flag, "I") ) {
             printf("Enter the A matrix <A>\n");
-            int m_ai, *m_x;
+            int m_ai, m_x;
             for (m_ai = 0; m_ai < (n*n); m_ai++) {
                 scanf("%i", m_x);
-                local_A[m_ai] = *m_x;
+                local_A[m_ai] = m_x;
             }
             printf("Enter the B matrix <B>\n");
             for (m_ai = 0; m_ai < (n*n); m_ai++) {
                 scanf("%i", m_x);
-                local_B[m_ai] = *m_x;
+                local_B[m_ai] = m_x;
             }
         }
         else {
