@@ -12,12 +12,12 @@
 #include <time.h>
 #include <string.h>
 
-void Get_dims( int* n_p, int* local_n_p, char* flag[], char* form,
+void Get_dims( int* n_p, int* local_n_p, char* flag, int* form,
                      int my_rank, int comm_sz, MPI_Comm comm);
 void Allocate_arrays( int** local_A_pp,  int** local_B_pp,
                       int** local_C_pp, int my_rank, int n, int local_n,
                      MPI_Comm comm);
-void Construct_form(  int local_A[],  int local_B[], int n,
+void Construct_form(  int local_A[],  int local_B[], int n, int my_rank,
                      char* flag );
 void Generate_matrix( int local_A[], int n);
 void Print_matrix(char title[],  int local_A[], int local_n,
@@ -32,7 +32,7 @@ int main(void) {
      int* local_C;
      int* C;
     char* flag;
-    char* form[3];
+    int* form;
     int n, local_n;
     int my_rank, comm_sz;
     MPI_Comm comm;
@@ -48,9 +48,9 @@ int main(void) {
     //In the case of n not evenly divisible by P.
     //Give the last process all of the extra from N%P.
     Allocate_arrays(&local_A, &local_B, &local_C, my_rank, n, local_n, comm);
-    Construct_form(local_A, local_B, n, flag);
-    Print_matrix("A", local_A, local_n, local_n, n, my_rank, comm);
-    Print_matrix("B", local_B, local_n,  local_n, n, my_rank, comm);
+    Construct_form(local_A, local_B, n, my_rank, flag);
+    Print_matrix("A", local_A, local_n, n, my_rank, comm);
+    Print_matrix("B", local_B, local_n, n, my_rank, comm);
     // Read_matrix("A", local_A, m,   n, my_rank, comm);
     
 //    MPI_Barrier(comm);
@@ -86,17 +86,22 @@ void Get_dims(
               int*      n_p        /* out */,
               int*      local_n_p  /* out */,
               char*     flag       /* out */,
-              char*     form       /* out */,
+              int*      form       /* out */,
               int       my_rank    /* in  */,
               int       comm_sz    /* in  */,
               MPI_Comm  comm       /* in  */) {
     int local_ok = 1;
-    
+    char* temp;
     if (my_rank == 0) {
         printf("Enter the <form>\n");
         scanf("%s", form);
         printf("Enter the <flag>\n");
-        scanf("%s", flag);
+        scanf("%s", temp);
+        if (strcmp(temp, "ijk"))
+            *form = 1;
+        else if (strcmp(temp,, "ikj"))
+            *form = 2;
+        else *form = 3;
         printf("Enter the dimentions <n>\n");
         scanf("%i", n_p);
     }
@@ -110,9 +115,9 @@ void Get_dims(
 }  /* Get_dims */
 
 void Allocate_arrays(
-                      int**  local_A_pp  /* out */,
-                      int**  local_B_pp  /* out */,
-                      int**  local_C_pp  /* out */,
+                     int**  local_A_pp  /* out */,
+                     int**  local_B_pp  /* out */,
+                     int**  local_C_pp  /* out */,
                      int       my_rank    /* in  */,
                      int       n           /* in  */,
                      int       local_n     /* in  */,
@@ -135,9 +140,10 @@ void Allocate_arrays(
 }  /* Allocate_arrays */
 
 void Construct_form(
-                     int local_A[],
-                     int local_B[],
+                    int local_A[],
+                    int local_B[],
                     int n,
+                    int my_rank,
                     char* flag ) {
     if (my_rank == 0) {
         if (strcmp(flag, "I") ) {
@@ -192,7 +198,7 @@ void Print_matrix(
         MPI_Gather(local_A, local_n*n, MPI_INT,
                    A, local_n*n, MPI_INT, 0, comm);
         printf("\nThe matrix %s\n", title);
-        for (i = 0; i < m; i++) {
+        for (i = 0; i < n; i++) {
             for (j = 0; j < n; j++)
                 printf("%i ", A[i*n+j]);
             printf("\n");
