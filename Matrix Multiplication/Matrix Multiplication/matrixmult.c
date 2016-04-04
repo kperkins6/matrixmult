@@ -25,7 +25,7 @@ void Read_vector(char prompt[], double local_vec[], int n, int local_n,
                  int my_rank, MPI_Comm comm);
 void Generate_matrix(double local_A[], int   int n);
 //void Generate_vector(double local_B[], int local_n);
-//void Print_matrix(char title[], double local_A[], int m, int  
+//void Print_matrix(char title[], double local_A[], int m, int
                   int n, int my_rank, MPI_Comm comm);
 //void Print_vector(char title[], double local_vec[], int n,
                   int local_n, int my_rank, MPI_Comm comm);
@@ -45,12 +45,12 @@ int main(void) {
     int my_rank, comm_sz;
     MPI_Comm comm;
     double start, finish, loc_elapsed, elapsed;
-    
+
     MPI_Init(NULL, NULL);
     comm = MPI_COMM_WORLD;
     MPI_Comm_size(comm, &comm_sz);
     MPI_Comm_rank(comm, &my_rank);
-    
+
     Get_dims(&m, &n, &local_n, my_rank, comm_sz, comm);
     Allocate_arrays(&local_A, &local_B, &local_C, &C, n, local_n, comm);
     // Read_matrix("A", local_A, m,   n, my_rank, comm);
@@ -81,7 +81,7 @@ int main(void) {
 #  ifdef DEBUG
     Print_vector("B", local_B, n, local_n, my_rank, comm);
 #  endif
-    
+
     MPI_Barrier(comm);
     start = MPI_Wtime();
     if ( !strcmp(form, "ijk"))
@@ -95,14 +95,14 @@ int main(void) {
     finish = MPI_Wtime();
     loc_elapsed = finish-start;
     MPI_Reduce(&loc_elapsed, &elapsed, 1, MPI_DOUBLE, MPI_MAX, 0, comm);
-    
+
 #  ifdef DEBUG
     Print_vector("C", local_C, m,   my_rank, comm);
 #  endif
-    
+
     if (my_rank == 0)
         printf("Elapsed time = %e\n", elapsed);
-    
+
     free(local_A);
     free(local_B);
     free(local_C);
@@ -118,7 +118,7 @@ void Check_for_error(
                      char      message[]  /* in */,
                      MPI_Comm  comm       /* in */) {
     int ok;
-    
+
     MPI_Allreduce(&local_ok, &ok, 1, MPI_INT, MPI_MIN, comm);
     if (ok == 0) {
         int my_rank;
@@ -145,7 +145,7 @@ void Get_dims(
               int       comm_sz    /* in  */,
               MPI_Comm  comm       /* in  */) {
     int local_ok = 1;
-    
+
     if (my_rank == 0) {
         printf("Enter the <form>\n");
         scanf("%s", form);
@@ -161,7 +161,7 @@ void Get_dims(
     Check_for_error(local_ok, "Get_dims",
                     "m and n must be positive and evenly divisible by comm_sz",
                     comm);
-    
+
     *local_n_p = *n_p/comm_sz;
 }  /* Get_dims */
 
@@ -173,13 +173,13 @@ void Allocate_arrays(
                      int       n           /* in  */,
                      int       local_n     /* in  */,
                      MPI_Comm  comm        /* in  */) {
-    
+
     int local_ok = 1;
-    
+
     *local_A_pp = malloc(n*n*sizeof(double));
     *local_B_pp = malloc(n*n*sizeof(double));
     *local_C_pp = malloc(n*n*sizeof(double));
-    
+
     if (*local_A_pp == NULL || local_B_pp == NULL ||
         local_C_pp == NULL) local_ok = 0;
     Check_for_error(local_ok, "Allocate_arrays",
@@ -197,7 +197,7 @@ void Read_matrix(
     double* A = NULL;
     int local_ok = 1;
     int i, j;
-    
+
     if (my_rank == 0) {
         A = malloc(n*n*sizeof(double));
         if (A == NULL) local_ok = 0;
@@ -228,7 +228,7 @@ void Read_vector(
                  MPI_Comm  comm         /* in  */) {
     double* vec = NULL;
     int i, local_ok = 1;
-    
+
     if (my_rank == 0) {
         vec = malloc(n*sizeof(double));
         if (vec == NULL) local_ok = 0;
@@ -253,7 +253,7 @@ void Generate_matrix(
                      double local_A[]  /* out */,
                      int    n          /* in  */) {
     int i, j;
-    
+
     for (i = 0; i < n; i++)
         for (j = 0; j < n; j++)
             local_A[i*n + j] = ((double) random())/((double) RAND_MAX);
@@ -264,7 +264,7 @@ void Generate_vector(
                      double local_B[] /* out */,
                      int    local_n   /* in  */) {
     int i;
-    
+
     for (i = 0; i < local_n; i++)
         local_B[i] = ((double) random())/((double) RAND_MAX);
 }  /* Generate_vector */
@@ -279,7 +279,7 @@ void Print_matrix(
                   MPI_Comm  comm       /* in */) {
     double* A = NULL;
     int i, j, local_ok = 1;
-    
+
     if (my_rank == 0) {
         A = malloc(m*n*sizeof(double));
         if (A == NULL) local_ok = 0;
@@ -313,7 +313,7 @@ void Print_vector(
                   MPI_Comm  comm        /* in */) {
     double* vec = NULL;
     int i, local_ok = 1;
-    
+
     if (my_rank == 0) {
         vec = malloc(n*sizeof(double));
         if (vec == NULL) local_ok = 0;
@@ -336,7 +336,7 @@ void Print_vector(
 
 /*-------------------------------------------------------------------*/
 //void Mat_vect_mult(
-//                   double    local_A[]  /* in  */, 
+//                   double    local_A[]  /* in  */,
 //                   double    local_B[]  /* in  */,
 //                   double    local_C[]  /* out */,
 //                   int       n          /* in  */,
@@ -345,14 +345,14 @@ void Print_vector(
 //    double* B;
 //    int local_i, j;
 //    int local_ok = 1;
-//    
+//
 //    B = malloc(n*sizeof(double));
 //    if (B == NULL) local_ok = 0;
 //    Check_for_error(local_ok, "Mat_vect_mult",
 //                    "Can't allocate temporary vector", comm);
 //    MPI_Allgather(local_B, local_n, MPI_DOUBLE,
 //                  B, local_n, MPI_DOUBLE, comm);
-//    
+//
 //    for (local_i = 0; local_i < local_n; local_i++) {
 //        local_C[local_i] = 0.0;
 //        for (j = 0; j < n; j++)
@@ -363,14 +363,14 @@ void Print_vector(
 
 /*
 
- 
+
  x = malloc(n*sizeof(double));
  if (x == NULL) local_ok = 0;
     Check_for_error(local_ok, "Mat_vect_mult",
     "Can't allocate temporary vector", comm);
  MPI_Allgather(local_x, local_n, MPI_DOUBLE,
  x, local_n, MPI_DOUBLE, comm);
- 
+
  for (local_i = 0; local_i < local_n; local_i++) {
     local_y[local_i] = 0.0;
     for (j = 0; j < n; j++)
@@ -389,7 +389,7 @@ void ijk_mult(
               int       n          /* in  */,
               int       local_n    /* in  */,
               MPI_Comm  comm       /* in  */) {
-    
+
     int i, k, j;
     for (i = 0; i < *local_n; i++) {
         for(j=0; j < *n; j++) {
@@ -409,11 +409,11 @@ void ikj_mult(
               int       n          /* in  */,
               int       local_n    /* in  */,
               MPI_Comm  comm       /* in  */) {
-    
+
 //    double* B;
 //    int local_i, j;
 //    int local_ok = 1;
-//    
+//
 //    B = malloc(n*sizeof(double));
 //    if (B == NULL) local_ok = 0;
 //    Check_for_error(local_ok, "Mat_vect_mult",
@@ -421,9 +421,9 @@ void ikj_mult(
 //    MPI_Allgather(local_B, local_n, MPI_DOUBLE,
 //                  B, local_n, MPI_DOUBLE, comm);
 
-    
-    
-    
+
+
+
     int i, k, j;
     for (i = 0; i < *local_n; i++) {
         for (k = 0; k < *n; k++) {
@@ -443,11 +443,11 @@ void kij_mult(
               int       n          /* in  */,
               int       local_n    /* in  */,
               MPI_Comm  comm       /* in  */) {
-    
+
 //    double* B;
 //    int local_i, j;
 //    int local_ok = 1;
-//    
+//
 //    B = malloc(n*sizeof(double));
 //    if (B == NULL) local_ok = 0;
 //    Check_for_error(local_ok, "Mat_vect_mult",
@@ -455,9 +455,9 @@ void kij_mult(
 //    MPI_Allgather(local_B, local_n, MPI_DOUBLE,
 //                  B, local_n, MPI_DOUBLE, comm);
 
-    
-    
-    
+
+
+
     int i, k, j;
     for (k = 0; k < *n; k++) {
         for (i = 0; i < *local_n; i++) {
