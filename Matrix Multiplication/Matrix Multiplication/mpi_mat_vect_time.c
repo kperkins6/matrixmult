@@ -14,7 +14,7 @@
  *              = number of columns)
  * Output:   Elapsed time for execution of the multiplication
  *
- * Notes:     
+ * Notes:
  *    1. Number of processes should evenly divide both m and n
  *    2. Define DEBUG for verbose output, including the product
  *       vector y
@@ -25,25 +25,25 @@
 #include <stdlib.h>
 #include <mpi.h>
 
-void Check_for_error(int local_ok, char fname[], char message[], 
+void Check_for_error(int local_ok, char fname[], char message[],
       MPI_Comm comm);
 void Get_dims(int* m_p, int* local_m_p, int* n_p, int* local_n_p,
       int my_rank, int comm_sz, MPI_Comm comm);
-void Allocate_arrays(double** local_A_pp, double** local_x_pp, 
-      double** local_y_pp, int local_m, int n, int local_n, 
+void Allocate_arrays(double** local_A_pp, double** local_x_pp,
+      double** local_y_pp, int local_m, int n, int local_n,
       MPI_Comm comm);
-void Read_matrix(char prompt[], double local_A[], int m, int local_m, 
+void Read_matrix(char prompt[], double local_A[], int m, int local_m,
       int n, int my_rank, MPI_Comm comm);
-void Read_vector(char prompt[], double local_vec[], int n, int local_n, 
+void Read_vector(char prompt[], double local_vec[], int n, int local_n,
       int my_rank, MPI_Comm comm);
 void Generate_matrix(double local_A[], int local_m, int n);
 void Generate_vector(double local_x[], int local_n);
-void Print_matrix(char title[], double local_A[], int m, int local_m, 
+void Print_matrix(char title[], double local_A[], int m, int local_m,
       int n, int my_rank, MPI_Comm comm);
 void Print_vector(char title[], double local_vec[], int n,
       int local_n, int my_rank, MPI_Comm comm);
-void Mat_vect_mult(double local_A[], double local_x[], 
-      double local_y[], int local_m, int n, int local_n, 
+void Mat_vect_mult(double local_A[], double local_x[],
+      double local_y[], int local_m, int n, int local_n,
       MPI_Comm comm);
 
 /*-------------------------------------------------------------------*/
@@ -99,9 +99,9 @@ int main(void) {
 
 /*-------------------------------------------------------------------*/
 void Check_for_error(
-      int       local_ok   /* in */, 
+      int       local_ok   /* in */,
       char      fname[]    /* in */,
-      char      message[]  /* in */, 
+      char      message[]  /* in */,
       MPI_Comm  comm       /* in */) {
    int ok;
 
@@ -110,7 +110,7 @@ void Check_for_error(
       int my_rank;
       MPI_Comm_rank(comm, &my_rank);
       if (my_rank == 0) {
-         fprintf(stderr, "Proc %d > In %s, %s\n", my_rank, fname, 
+         fprintf(stderr, "Proc %d > In %s, %s\n", my_rank, fname,
                message);
          fflush(stderr);
       }
@@ -122,7 +122,7 @@ void Check_for_error(
 
 /*-------------------------------------------------------------------*/
 void Get_dims(
-      int*      m_p        /* out */, 
+      int*      m_p        /* out */,
       int*      local_m_p  /* out */,
       int*      n_p        /* out */,
       int*      local_n_p  /* out */,
@@ -139,10 +139,10 @@ void Get_dims(
    }
    MPI_Bcast(m_p, 1, MPI_INT, 0, comm);
    MPI_Bcast(n_p, 1, MPI_INT, 0, comm);
-   if (*m_p <= 0 || *n_p <= 0 || *m_p % comm_sz != 0 
+   if (*m_p <= 0 || *n_p <= 0 || *m_p % comm_sz != 0
          || *n_p % comm_sz != 0) local_ok = 0;
    Check_for_error(local_ok, "Get_dims",
-      "m and n must be positive and evenly divisible by comm_sz", 
+      "m and n must be positive and evenly divisible by comm_sz",
       comm);
 
    *local_m_p = *m_p/comm_sz;
@@ -151,12 +151,12 @@ void Get_dims(
 
 /*-------------------------------------------------------------------*/
 void Allocate_arrays(
-      double**  local_A_pp  /* out */, 
-      double**  local_x_pp  /* out */, 
-      double**  local_y_pp  /* out */, 
-      int       local_m     /* in  */, 
-      int       n           /* in  */,   
-      int       local_n     /* in  */, 
+      double**  local_A_pp  /* out */,
+      double**  local_x_pp  /* out */,
+      double**  local_y_pp  /* out */,
+      int       local_m     /* in  */,
+      int       n           /* in  */,
+      int       local_n     /* in  */,
       MPI_Comm  comm        /* in  */) {
 
    int local_ok = 1;
@@ -173,10 +173,10 @@ void Allocate_arrays(
 
 /*-------------------------------------------------------------------*/
 void Read_matrix(
-      char      prompt[]   /* in  */, 
-      double    local_A[]  /* out */, 
-      int       m          /* in  */, 
-      int       local_m    /* in  */, 
+      char      prompt[]   /* in  */,
+      double    local_A[]  /* out */,
+      int       m          /* in  */,
+      int       local_m    /* in  */,
       int       n          /* in  */,
       int       my_rank    /* in  */,
       MPI_Comm  comm       /* in  */) {
@@ -193,21 +193,21 @@ void Read_matrix(
       for (i = 0; i < m; i++)
          for (j = 0; j < n; j++)
             scanf   ("%lf", &A[i*n+j]);
-      MPI_Scatter(A, local_m*n, MPI_DOUBLE, 
+      MPI_Scatter(A, local_m*n, MPI_DOUBLE,
             local_A, local_m*n, MPI_DOUBLE, 0, comm);
       free(A);
    } else {
       Check_for_error(local_ok, "Read_matrix",
             "Can't allocate temporary matrix", comm);
-      MPI_Scatter(A, local_m*n, MPI_DOUBLE, 
+      MPI_Scatter(A, local_m*n, MPI_DOUBLE,
             local_A, local_m*n, MPI_DOUBLE, 0, comm);
    }
 }  /* Read_matrix */
 
 /*-------------------------------------------------------------------*/
 void Read_vector(
-      char      prompt[]     /* in  */, 
-      double    local_vec[]  /* out */, 
+      char      prompt[]     /* in  */,
+      double    local_vec[]  /* out */,
       int       n            /* in  */,
       int       local_n      /* in  */,
       int       my_rank      /* in  */,
@@ -236,19 +236,19 @@ void Read_vector(
 
 /*-------------------------------------------------------------------*/
 void Generate_matrix(
-      double local_A[]  /* out */, 
-      int    local_m    /* in  */, 
+      double local_A[]  /* out */,
+      int    local_m    /* in  */,
       int    n          /* in  */) {
    int i, j;
 
    for (i = 0; i < local_m; i++)
-      for (j = 0; j < n; j++) 
+      for (j = 0; j < n; j++)
          local_A[i*n + j] = ((double) random())/((double) RAND_MAX);
 }  /* Generate_matrix */
 
 /*-------------------------------------------------------------------*/
 void Generate_vector(
-      double local_x[] /* out */, 
+      double local_x[] /* out */,
       int    local_n   /* in  */) {
    int i;
 
@@ -259,9 +259,9 @@ void Generate_vector(
 /*-------------------------------------------------------------------*/
 void Print_matrix(
       char      title[]    /* in */,
-      double    local_A[]  /* in */, 
-      int       m          /* in */, 
-      int       local_m    /* in */, 
+      double    local_A[]  /* in */,
+      int       m          /* in */,
+      int       local_m    /* in */,
       int       n          /* in */,
       int       my_rank    /* in */,
       MPI_Comm  comm       /* in */) {
@@ -293,8 +293,8 @@ void Print_matrix(
 
 /*-------------------------------------------------------------------*/
 void Print_vector(
-      char      title[]     /* in */, 
-      double    local_vec[] /* in */, 
+      char      title[]     /* in */,
+      double    local_vec[] /* in */,
       int       n           /* in */,
       int       local_n     /* in */,
       int       my_rank     /* in */,
@@ -324,10 +324,10 @@ void Print_vector(
 
 /*-------------------------------------------------------------------*/
 void Mat_vect_mult(
-      double    local_A[]  /* in  */, 
-      double    local_x[]  /* in  */, 
+      double    local_A[]  /* in  */,
+      double    local_x[]  /* in  */,
       double    local_y[]  /* out */,
-      int       local_m    /* in  */, 
+      int       local_m    /* in  */,
       int       n          /* in  */,
       int       local_n    /* in  */,
       MPI_Comm  comm       /* in  */) {

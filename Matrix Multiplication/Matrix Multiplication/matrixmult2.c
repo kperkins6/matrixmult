@@ -7,33 +7,39 @@
 //  * Compile:  mpicc -g -Wall -o mpi_mat_vect_time mpi_mat_vect_time.c
 //  * Run:      mpiexec -n <number of processes> ./mpi_mat_vect_time
 
+// Notes:
+// scan(n)
+// Bcast(&n, size_i, mpi_int)
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
 #include <time.h>
 #include <string.h>
 
-void Get_dims(int* n, int* local_n, char* flag, int* form, int my_rank, int comm_sz, MPI_Comm comm);
-void Allocate_arrays(int** local_A_pp,  int** local_B_pp, int** local_C_pp, int my_rank, int n, int local_n, MPI_Comm comm);
-void Construct_form( int local_A[],  int local_B[], int n, int my_rank, char* flag, int a_part );
+void get_dimensions(int* n, int* local_n, char* flag, int* form, int my_rank, int comm_sz, MPI_Comm comm);
+void Allocate_memory(int** local_A,  int** local_B, int** local_C, int my_rank, int n, int local_n, MPI_Comm comm);
+void Input_matrices(int local_A[],  int local_B[], int local_n, int n, int my_rank, char* flag, int a_part );
 void Generate_matrix(int local_A[],  int local_n, int n);
-void Print_matrix(char title[],  int local_A[], int local_n, int n, int my_rank, MPI_Comm comm);
+void Print_matrix(char title[],  int matrix[], int local_n, int n);
 void Check_for_error(int local_ok, char fname[], char message[], MPI_Comm comm);
-void ijk_mult(double local_A[], double local_B[], double local_C[], int   int n, int local_n, MPI_Comm comm);
-void ikj_mult(double local_A[], double local_B[], double local_C[], int   int n, int local_n, MPI_Comm comm);
-void kij_mult(double local_A[], double local_B[], double local_C[], int   int n, int local_n, MPI_Comm comm);
+void ijk_mult(int local_A[], int local_B[], int local_C[], int n, int local_n, MPI_Comm comm);
+void ikj_mult(int local_A[], int local_B[], int local_C[], int n, int local_n, MPI_Comm comm);
+void kij_mult(int local_A[], int local_B[], int local_C[], int n, int local_n, MPI_Comm comm);
 
 int main(void) {
-     int* local_A;
-     int* local_B;
-     int* local_C;
-     int* C, *B, *A;
-     char* flag = malloc(sizeof(char));
-     int* form = malloc(sizeof(int));
-     int n, local_n, a_part;
-     int my_rank, comm_sz;
-     MPI_Comm comm;
-     int start, finish, loc_elapsed, elapsed;
+    int* local_A;
+    int* local_B;
+    int* local_C;
+    int* C;
+    int *B;
+    int *A;
+    char* flag = malloc(sizeof(char));
+    int* form = malloc(sizeof(int));
+    int n, local_n, a_part;
+    int my_rank, comm_sz;
+    MPI_Comm comm;
+    double start, finish, loc_elapsed, elapsed;
 
     MPI_Init(NULL, NULL);
     comm = MPI_COMM_WORLD;
@@ -41,75 +47,88 @@ int main(void) {
     MPI_Comm_rank(comm, &my_rank);
 
     //Don’t worry about P > n.
-    Get_dims(&n, &local_n, flag,  form, my_rank, comm_sz, comm);
+    get_dimensions(&n, &local_n, flag,  form, my_rank, comm_sz, comm);
     //In the case of n not evenly divisible by P.
     //Give the last process all of the extra from N%P.
-    Allocate_arrays(&local_A, &local_B, &local_C, my_rank, n, local_n, comm);
-    a_part = n*n/comm_sz;
+    Allocate_memory(&local_A, &local_B, &local_C, my_rank, n, local_n, comm);
+    a_part = (n*n)/comm_sz;
+    // printf("a_part = %i\n", a_part);
     srandom(time(NULL));
-    C = malloc(n*n*sizeof(int));
     B = malloc(n*n*sizeof(int));
-    A = malloc(n*n*sizeof(int));
-    memset(A, 0, n*n*sizeof(int));
     memset(B, 0, n*n*sizeof(int));
-    memset(C, 0, n*n*sizeof(int));
     MPI_Barrier(MPI_COMM_WORLD);
 
   if (my_rank == 0) {
+    A = malloc(n*n*sizeof(int));
+    C = malloc(n*n*sizeof(int));
+    memset(C, 0, n*n*sizeof(int));
+    memset(A, 0, n*n*sizeof(int));
     if (!strcmp(flag, "I")) {
-      Construct_form(A, B, n, my_rank, flag, a_part);
+      Input_matrices(A, B, local_n, n, my_rank, flag, a_part);
       // Print_matrix("A", A, local_n, n, my_rank, comm);
-      // Print_matrix("B", B, local_n, n, my_rank, comm);
+      Print_matrix("B", B, n, n);
     }
     else {
-      printf("Generating Local(A and B)\n");
+      // printf("Generating Local(A and B)\n");
       printf("Generating A \n");
-      Generate_matrix(local_A, local_n, n);
+      Generate_matrix(A, n, n);
       printf("Generating B\n");
-      Generate_matrix(local_B, n, n);
+      Generate_matrix(B, n, n);
       // Print_matrix("local_A", local_A, local_n, n, my_rank, comm);
       // Print_matrix("local_B", local_B, local_n, n, my_rank, comm);
     }
   }
-    MPI_Scatter(A, a_part, MPI_INT, local_A, a_part, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast(B, n*n, MPI_INT, 0, MPI_COMM_WORLD);
-    Print_matrix("A", local_A, local_n, n, my_rank, comm);
-    Print_matrix("B", local_B, local_n, n, my_rank, comm);
-    // free(local_A);
-    // free(local_B);
-    // free(local_C);
-    // Read_matrix("A", local_A, m,   n, my_rank, comm);
+  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Bcast(B, n*n, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Scatter(A, a_part, MPI_INT, local_A, a_part, MPI_INT, 0, MPI_COMM_WORLD);
 
-//    MPI_Barrier(comm);
-//    start = MPI_Wtime();
-//    if ( !strcmp(form, "ijk"))
-//        ijk_mult(local_A, local_B, local_C,   n, local_n, comm);
-//    else if ( !strcmp(form, "ikj"))
-//        ikj_mult(local_A, local_B, local_C,   n, local_n, comm);
-//    else if ( !strcmp(form, "kij"))
-//        kij_mult(local_A, local_B, local_C,   n, local_n, comm);
-//    else
-//        printf("Invalid <form>\n");
-//    finish = MPI_Wtime();
-//    loc_elapsed = finish-start;
-//    MPI_Reduce(&loc_elapsed, &elapsed, 1, MPI_INT, MPI_MAX, 0, comm);
-//
-//#  ifdef DEBUG
-//    Print_vector("C", local_C, m,   my_rank, comm);
-//#  endif
-//
-//    if (my_rank == 0)
-//        printf("Elapsed time = %e\n", elapsed);
-// hello
+   MPI_Barrier(comm);
+   start = MPI_Wtime();
+  //  printf( "Form = %i\n", *form);
+   if ( *form == 1) {
+       ijk_mult(local_A, B, local_C, n, local_n, comm);
+      //  printf("IJK Form\n");
+    }
+   else if ( *form == 2) {
+       ikj_mult(local_A, B, local_C, n, local_n, comm);
+      //  printf("IKJ Form\n");
+    }
+   else if ( *form == 3) {
+       kij_mult(local_A, B, local_C, n, local_n, comm);
+      //  printf("KIJ Form\n");
+    }
+   else
+       printf("Invalid <form>\n");
+   MPI_Gather(local_C, local_n*n, MPI_INT, C, local_n*n, MPI_INT, 0, comm);
+   finish = MPI_Wtime();
+   loc_elapsed = finish-start;
+   MPI_Reduce(&loc_elapsed, &elapsed, 1, MPI_DOUBLE, MPI_MAX, 0, comm);
+
+   if (my_rank == 0) {
+     Print_matrix("matrix A", A, n, n);
+     Print_matrix("matrix B", B, n, n);
+   }
+  //  Print_matrix("matrix local_A", local_A, local_n, n);
+  //  Print_matrix("matrix local_C", local_C, local_n, n);
+   MPI_Barrier(MPI_COMM_WORLD);
+
+   if (my_rank == 0) {
+      printf("\n\n--------RESULT-------\n");
+      if (comm_sz > 1)
+        printf("Running on %i processors\n", comm_sz);
+      else  printf("Running on 1 processor\n");
+      printf("Elapsed Time=%f\n", elapsed);
+      Print_matrix("matrix C", C, n, n);
+    }
     // free(local_A);
     // free(local_B);
     // free(local_C);
     MPI_Finalize();
     return 0;
-}  /* main */
+}
 
 /*-------------------------------------------------------------------*/
-void Get_dims(
+void get_dimensions(
               int*      n        /* out */,
               int*      local_n  /* out */,
               char*     flag       /* out */,
@@ -124,9 +143,9 @@ void Get_dims(
         scanf("%s", temp);
         printf("Enter the <flag> ('I' or 'R')\n");
         scanf("%s", flag);
-        if (strcmp(temp, "ijk"))
+        if (!strcmp(temp, "ijk"))
             *form = 1;
-        else if (strcmp(temp, "ikj"))
+        else if (!strcmp(temp, "ikj"))
             *form = 2;
         else *form = 3;
         printf("Enter the dimentions <n>\n");
@@ -138,136 +157,112 @@ void Get_dims(
     MPI_Bcast(form, 4*sizeof(char), MPI_CHAR, 0, MPI_COMM_WORLD);
 
     if (*n <= 0 || *n % comm_sz != 0) local_ok = 0;
-    Check_for_error(local_ok, "Get_dims",
+    Check_for_error(local_ok, "get_dimensions",
                     "n must be positive and evenly divisible by comm_sz",
                     comm);
     *local_n = *n/comm_sz;
-    printf("n = %i, local_n= %i, comm_sz = %i, my_rank= %i.\n", *n, *local_n, comm_sz, my_rank);
-}  /* Get_dims */
+    // printf("n = %i, local_n= %i, comm_sz = %i, my_rank= %i.\n", *n, *local_n, comm_sz, my_rank);
+}  /* get_dimensions */
 
-void Allocate_arrays(
-                     int**  local_A_pp  /* out */,
-                     int**  local_B_pp  /* out */,
-                     int**  local_C_pp  /* out */,
+void Allocate_memory(
+                     int**  local_A  /* out */,
+                     int**  local_B  /* out */,
+                     int**  local_C  /* out */,
                      int       my_rank    /* in  */,
                      int       n           /* in  */,
                      int       local_n     /* in  */,
                      MPI_Comm  comm        /* in  */) {
 
     int local_ok = 1;
-    // if (my_rank == 0) {
-        *local_A_pp = malloc(local_n*n*sizeof( int));
-        *local_B_pp = malloc(n*n*sizeof( int));
-        *local_C_pp = malloc(local_n*n*sizeof( int));
-         memset(*local_A_pp, 0, local_n*n*sizeof( int));
-         memset(*local_B_pp, 0, n*n*sizeof( int));
-         memset(*local_C_pp, 0, local_n*n*sizeof( int));
-    // } //
-    printf("n = %i, local_n= %i, my_rank= %i.\n", n, local_n, my_rank);
+        *local_A = malloc(local_n*n*sizeof( int));
+        *local_B = malloc(n*n*sizeof( int));
+        *local_C = malloc(local_n*n*sizeof( int));
+         memset(*local_A, 0, local_n*n*sizeof( int));
+         memset(*local_B, 0, n*n*sizeof( int));
+         memset(*local_C, 0, local_n*n*sizeof( int));
+    // printf("n = %i, local_n= %i, my_rank= %i.\n", n, local_n, my_rank);
 
-    if (*local_A_pp == NULL || local_B_pp == NULL ||
-        local_C_pp == NULL) local_ok = 0;
-    Check_for_error(local_ok, "Allocate_arrays",
+    if (*local_A == NULL || local_B == NULL ||
+        local_C == NULL) local_ok = 0;
+    Check_for_error(local_ok, "Allocate_memory",
                     "Can't allocate local arrays", comm);
-}  /* Allocate_arrays */
+}
 
-void Construct_form(
+void Input_matrices(
                     int local_A[],
                     int local_B[],
+                    int local_n,
                     int n,
                     int my_rank,
                     char* flag,
                     int a_part ) {
 
-        int *A = malloc(n*n*sizeof(int));
         if (!strcmp(flag, "I") ) {
             if (my_rank == 0) {
-              printf("Enter the A matrix <A>, flag = %s \n", flag);
+              printf("Enter the A matrix <A>\n");
               int m_ai;
               int* m_x = malloc(sizeof( int));
               for (m_ai = 0; m_ai < (n*n); m_ai++) {
                   scanf("%i", m_x);
-                  A[m_ai] = *m_x;
+                  local_A[m_ai] = *m_x;
                 }
-                printf("Enter the B matrix <B>\n");
+                printf("Enter the B matrix <B>");
                 for (m_ai = 0; m_ai < (n*n); m_ai++) {
                   scanf("%i", m_x);
                   local_B[m_ai] = *m_x;
                 }
-                // MPI_Scatter(A, a_part, MPI_INT, local_A, a_part, MPI_INT, 0, MPI_COMM_WORLD);
-                // MPI_Bcast(local_B, n*n, MPI_INT, 0, MPI_COMM_WORLD);
-                // free(m_x);
             }
         }
-        else {
-            // srandom(time(NULL));
-            // if (my_rank == 0) {
-            //   printf("Generating A and B\n");
-            //   printf("Generating A \n");
-            //   Generate_matrix(A, n);
-            //   printf("Scattering A\n");
-            //   MPI_Scatter(A, a_part, MPI_INT, local_A, a_part, MPI_INT, 0, MPI_COMM_WORLD);
-            //   printf("Generating B\n");
-            //   Generate_matrix(local_B, n);
-            //   printf("Scattering B\n");
-            //   MPI_Bcast(local_B, n*n, MPI_INT, 0, MPI_COMM_WORLD);
-            // }
-        }
+        // else {
+        //     // srandom(time(NULL));
+        //     // if (my_rank == 0) {
+        //     //   printf("Generating A and B\n");
+        //     //   printf("Generating A \n");
+        //     //   Generate_matrix(A, n);
+        //     //   printf("Scattering A\n");
+        //     //   MPI_Scatter(A, a_part, MPI_INT, local_A, a_part, MPI_INT, 0, MPI_COMM_WORLD);
+        //     //   printf("Generating B\n");
+        //     //   Generate_matrix(local_B, n);
+        //     //   printf("Scattering B\n");
+        //     //   MPI_Bcast(local_B, n*n, MPI_INT, 0, MPI_COMM_WORLD);
+        //     // }
+        // }
 }
-
+/*-------------------------------------------------------------------*/
 void Generate_matrix(
                      int local_A[]  /* out */,
                      int local_n,   /* in */
                      int    n          /* in  */){
 
     int i, j, q;
-    printf("Generating Matrix, local_n=%i, n= %i\n", local_n, n);
+    fprintf(stderr, "Generating the Matrix\n");
     for (i = 0; i < local_n; i++) {
         for (j = 0; j < n; j++) {
             q = (( int) random()%42);
             local_A[i*n + j] = q;
-            printf("q = %i ", q);
+            fprintf(stderr, "q = %i ", q);
         }
-        printf("\n");
+        fprintf(stderr, "\n");
     }
-}  /* Generate_matrix */
+}
 
-void Print_matrix(
-                  char      title[]    /* in */,
-                  int    local_A[]     /* in */,
-                  int       local_n    /* in */,
-                  int       n          /* in */,
-                  int       my_rank    /* in */,
-                  MPI_Comm  comm       /* in */) {
-    int* A = NULL;
-    int i, j, local_ok = 1;
-    printf("In Print\n");
-    if (my_rank == 0) {
-        A = malloc(n*n*sizeof( int));
-        if (A == NULL) local_ok = 0;
-        Check_for_error(local_ok, "Print_matrix",
-                        "Can't allocate temporary matrix", comm);
-        MPI_Gather(local_A, local_n*n, MPI_INT,
-                   A, local_n*n, MPI_INT, 0, comm);
-        printf("\nThe matrix %s\n", title);
-        for (i = 0; i < n; i++) {
-            for (j = 0; j < n; j++)
-                printf("%i ", A[i*n+j]);
-            printf("\n");
-        }
-        printf("\n");
-        // free(A);
-    } else {
-        Check_for_error(local_ok, "Print_matrix",
-                        "Can't allocate temporary matrix", comm);
+void Print_matrix( char title[], int matrix[], int local_n, int n) {
+  int i, j;
 
-        printf("Gathering from %i\n", my_rank);
-        MPI_Gather(local_A, local_n*n, MPI_INT,
-                   A, local_n*n, MPI_INT, 0, comm);
-    }
-}  /* Print_matrix */
+  fprintf(stderr, "\nPrinting %s\n", title);
+  for (i = 0; i < local_n; i++) {
+     for (j = 0; j < n; j++)
+        fprintf(stderr, "%i ", matrix[i*n+j]);
+     fprintf(stderr, "\n");
+  }
+}
 
 /*-------------------------------------------------------------------*/
+/*
+  THIS ERROR FUNCTION WAS RETRIEVED FROM PACHECO'S CODE.
+  SINCE IT'S PURELY FOR TESTING, AND ADDS NO FUNCTIONALITY
+  TO THE PROGRAM, I COPIED IT DIRECTLY
+*/
 void Check_for_error(
                      int       local_ok   /* in */,
                      char      fname[]    /* in */,
@@ -290,19 +285,27 @@ void Check_for_error(
 }  /* Check_for_error */
 
 void ijk_mult(
-              double    local_A[]  /* in  */,
-              double    local_B[]  /* in  */,
-              double    local_C[]  /* out */,
+              int    local_A[]  /* in  */,
+              int    local_B[]  /* in  */,
+              int    local_C[]  /* out */,
               int       n          /* in  */,
               int       local_n    /* in  */,
               MPI_Comm  comm       /* in  */) {
 
-    int i, k, j;
-    for (i = 0; i < *local_n; i++) {
-        for(j=0; j < *n; j++) {
+    int i, k, j, q;
+    // printf("In IJK\n");
+    for (i = 0; i < local_n; i++) {
+      // printf("\ni= %i", i);
+        for(j=0; j < n; j++) {
 //            local_C[i*(*n)+j] = 0;
-            for (k = 0; k < *n; k++) {
-                local_C[i*(*n)+j] += local_A[i*(*n)+k] * local_B[k*(*n)+j];
+            // printf("\n");
+            for (k = 0; k < n; k++) {
+                q = local_A[i*(n)+k] * local_B[k*(n)+j];
+                // printf("[%i*%i=]%i",local_A[i*(n)+k], local_B[k*(n)+j], q);
+                local_C[i*(n)+j] += q;
+                // if (k==(n-1))
+                //   printf("=%i\n", local_C[i*n+j]);
+                // else printf("+");
             }
         }
     }
@@ -310,19 +313,19 @@ void ijk_mult(
 
 
 void ikj_mult(
-              double    local_A[]  /* in  */,
-              double    local_B[]  /* in  */,
-              double    local_C[]  /* out */,
+              int    local_A[]  /* in  */,
+              int    local_B[]  /* in  */,
+              int    local_C[]  /* out */,
               int       n          /* in  */,
               int       local_n    /* in  */,
               MPI_Comm  comm       /* in  */) {
 
     int i, k, j;
-    for (i = 0; i < *local_n; i++) {
-        for (k = 0; k < *n; k++) {
+    for (i = 0; i < local_n; i++) {
+        for (k = 0; k < n; k++) {
 //            local_C[i*(*n)+j] = 0;
-            for(j=0; j < *n; j++) {
-                local_C[i*(*n)+j] += localA[i*(*n)+k] * local_B[k*(*n)+j];
+            for(j=0; j < n; j++) {
+                local_C[i*(n)+j] += local_A[i*(n)+k] * local_B[k*(n)+j];
             }
         }
     }
@@ -330,19 +333,19 @@ void ikj_mult(
 }
 
 void kij_mult(
-              double    local_A[]  /* in  */,
-              double    local_B[]  /* in  */,
-              double    local_C[]  /* out */,
+              int    local_A[]  /* in  */,
+              int    local_B[]  /* in  */,
+              int    local_C[]  /* out */,
               int       n          /* in  */,
               int       local_n    /* in  */,
               MPI_Comm  comm       /* in  */) {
 
     int i, k, j;
-    for (k = 0; k < *n; k++) {
-        for (i = 0; i < *local_n; i++) {
+    for (k = 0; k < n; k++) {
+        for (i = 0; i < local_n; i++) {
 //            local_C[i*(*n)+j] = 0;
-            for(j=0; j < *n; j++) {
-                local_C[i*(*n)+j] += local_A[i*(*n)+k] * local_B[k*(*n)+j];
+            for(j=0; j < n; j++) {
+                local_C[i*(n)+j] += local_A[i*(n)+k] * local_B[k*(n)+j];
             }
         }
     }
