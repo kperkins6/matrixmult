@@ -4,12 +4,14 @@
 //
 //  Created by Kevin Perkins on 3/28/16.
 //  Copyright © 2016 Kevin Perkins. All rights reserved.
-//  * Compile:  mpicc -g -Wall -o mpi_mat_vect_time mpi_mat_vect_time.c
-//  * Run:      mpiexec -n <number of processes> ./mpi_mat_vect_time
+//  * Compile:  mpicc -g -Wall -o matrixmult matrixmult.c
+//  * Run:      mpirun -n <number of processes> ./matrixmult
 
 // Notes:
-// scan(n)
-// Bcast(&n, size_i, mpi_int)
+//
+// Issues:
+//  The case of n/comm_sz != 0 is not handeled. the residual size will NOT be
+//  acounted for.
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,7 +19,7 @@
 #include <time.h>
 #include <string.h>
 
-void get_dimensions(int* n, int* local_n, char* flag, int* form, int my_rank, int comm_sz, MPI_Comm comm);
+void get_format(int* n, int* local_n, char* flag, int* form, int my_rank, int comm_sz, MPI_Comm comm);
 void Allocate_memory(int** local_A,  int** local_B, int** local_C, int my_rank, int n, int local_n, MPI_Comm comm);
 void Input_matrices(int local_A[],  int local_B[], int local_n, int n, int my_rank, char* flag, int a_part );
 void Generate_matrix(int local_A[],  int local_n, int n);
@@ -32,8 +34,8 @@ int main(void) {
     int* local_B;
     int* local_C;
     int* C;
-    int *B;
-    int *A;
+    int* B;
+    int* A;
     char* flag = malloc(sizeof(char));
     int* form = malloc(sizeof(int));
     int n, local_n, a_part;
@@ -47,7 +49,7 @@ int main(void) {
     MPI_Comm_rank(comm, &my_rank);
 
     //Don’t worry about P > n.
-    get_dimensions(&n, &local_n, flag,  form, my_rank, comm_sz, comm);
+    get_format(&n, &local_n, flag,  form, my_rank, comm_sz, comm);
     //In the case of n not evenly divisible by P.
     //Give the last process all of the extra from N%P.
     Allocate_memory(&local_A, &local_B, &local_C, my_rank, n, local_n, comm);
@@ -66,13 +68,13 @@ int main(void) {
     if (!strcmp(flag, "I")) {
       Input_matrices(A, B, local_n, n, my_rank, flag, a_part);
       // Print_matrix("A", A, local_n, n, my_rank, comm);
-      Print_matrix("B", B, n, n);
+      // Print_matrix("B", B, n, n);
     }
     else {
       // printf("Generating Local(A and B)\n");
-      printf("Generating A \n");
+      // printf("Generating A \n");
       Generate_matrix(A, n, n);
-      printf("Generating B\n");
+      // printf("Generating B\n");
       Generate_matrix(B, n, n);
       // Print_matrix("local_A", local_A, local_n, n, my_rank, comm);
       // Print_matrix("local_B", local_B, local_n, n, my_rank, comm);
@@ -104,21 +106,23 @@ int main(void) {
    loc_elapsed = finish-start;
    MPI_Reduce(&loc_elapsed, &elapsed, 1, MPI_DOUBLE, MPI_MAX, 0, comm);
 
-   if (my_rank == 0) {
-     Print_matrix("matrix A", A, n, n);
-     Print_matrix("matrix B", B, n, n);
-   }
+  //  if (my_rank == 0) {
+  //    Print_matrix("matrix A", A, n, n);
+  //    Print_matrix("matrix B", B, n, n);
+  //  }
   //  Print_matrix("matrix local_A", local_A, local_n, n);
   //  Print_matrix("matrix local_C", local_C, local_n, n);
    MPI_Barrier(MPI_COMM_WORLD);
 
    if (my_rank == 0) {
-      printf("\n\n--------RESULT-------\n");
+      // printf("\n\n--------RESULT MATRIX-------\n");
+      // Print_matrix("matrix C", C, n, n);
+      printf("\n\n--------RESULT TIMING-------\n");
       if (comm_sz > 1)
         printf("Running on %i processors\n", comm_sz);
       else  printf("Running on 1 processor\n");
-      printf("Elapsed Time=%f\n", elapsed);
-      Print_matrix("matrix C", C, n, n);
+      printf("Elapsed Time = %f\n", elapsed);
+      printf("\n\n\n\n");
     }
     // free(local_A);
     // free(local_B);
@@ -126,16 +130,24 @@ int main(void) {
     MPI_Finalize();
     return 0;
 }
+/* ---------------------------
+  Function: Get Format
+  Arguments:
+    int*      n          output,
+    int*      local_n    output,
+    char*     flag       output,
+    int*      form       output,
+    int       my_rank    input,
+    int       comm_sz    input,
+    MPI_Comm  comm       input
+  Functionality:
+    Accepts setup parameters for
+    the program, including flag,
+    form, and dimensions
+*/
+void get_format(int*  n, int*  local_n, char* flag, int*  form, int my_rank,
+                int comm_sz, MPI_Comm comm) {
 
-/*-------------------------------------------------------------------*/
-void get_dimensions(
-              int*      n        /* out */,
-              int*      local_n  /* out */,
-              char*     flag       /* out */,
-              int*      form       /* out */,
-              int       my_rank    /* in  */,
-              int       comm_sz    /* in  */,
-              MPI_Comm  comm       /* in  */) {
     int local_ok = 1;
     char* temp = malloc(4*sizeof(char));
     if (my_rank == 0) {
@@ -157,21 +169,31 @@ void get_dimensions(
     MPI_Bcast(form, 4*sizeof(char), MPI_CHAR, 0, MPI_COMM_WORLD);
 
     if (*n <= 0 || *n % comm_sz != 0) local_ok = 0;
-    Check_for_error(local_ok, "get_dimensions",
+    Check_for_error(local_ok, "get_format",
                     "n must be positive and evenly divisible by comm_sz",
                     comm);
     *local_n = *n/comm_sz;
     // printf("n = %i, local_n= %i, comm_sz = %i, my_rank= %i.\n", *n, *local_n, comm_sz, my_rank);
-}  /* get_dimensions */
+}
 
-void Allocate_memory(
-                     int**  local_A  /* out */,
-                     int**  local_B  /* out */,
-                     int**  local_C  /* out */,
-                     int       my_rank    /* in  */,
-                     int       n           /* in  */,
-                     int       local_n     /* in  */,
-                     MPI_Comm  comm        /* in  */) {
+/* ---------------------------
+  Function: Allocate Memory
+  Arguments:
+    int**     local_A    out,
+    int**     local_B    out,
+    int**     local_C    out,
+    int       my_rank    in,
+    int       n          in,
+    int       local_n    in,
+    MPI_Comm  comm       in
+  Functionality:
+    Allocates the necessary
+    memory for each matrix.
+    An error is raised if
+    memory cannot be allocated
+*/
+void Allocate_memory( int** local_A, int** local_B, int** local_C, int my_rank,
+                      int n, int local_n, MPI_Comm comm) {
 
     int local_ok = 1;
         *local_A = malloc(local_n*n*sizeof( int));
@@ -188,6 +210,22 @@ void Allocate_memory(
                     "Can't allocate local arrays", comm);
 }
 
+/* ---------------------------
+  Function: Input Matrices
+  Arguments:
+    int local_A[]   output,
+    int local_B[]   output,
+    int local_n     input,
+    int n           input,
+    int my_rank     input,
+    char* flag      input,
+    int a_part      input
+  Functionality:
+    Reads in the numeric
+    values for the A and B
+    matrices. Only works on
+    thread rank 0.
+*/
 void Input_matrices(
                     int local_A[],
                     int local_B[],
@@ -228,21 +266,31 @@ void Input_matrices(
         //     // }
         // }
 }
-/*-------------------------------------------------------------------*/
-void Generate_matrix(
-                     int local_A[]  /* out */,
-                     int local_n,   /* in */
-                     int    n          /* in  */){
+
+/* ---------------------------
+  Function: Generate Matrix
+  Arguments:
+    int       local_A[]  out,
+    int       local_n    in,
+    int       n          in
+  Functionality:
+    Generates a random number
+    matrix based on the size
+    parameters local_n, n
+    It is filled with random
+    integers.
+*/
+void Generate_matrix( int local_A[], int local_n, int n){
 
     int i, j, q;
-    fprintf(stderr, "Generating the Matrix\n");
+    // fprintf(stderr, "Generating the Matrix\n");
     for (i = 0; i < local_n; i++) {
         for (j = 0; j < n; j++) {
             q = (( int) random()%42);
             local_A[i*n + j] = q;
-            fprintf(stderr, "q = %i ", q);
+            // fprintf(stderr, "q = %i ", q);
         }
-        fprintf(stderr, "\n");
+        // fprintf(stderr, "\n");
     }
 }
 
@@ -284,13 +332,23 @@ void Check_for_error(
     }
 }  /* Check_for_error */
 
-void ijk_mult(
-              int    local_A[]  /* in  */,
-              int    local_B[]  /* in  */,
-              int    local_C[]  /* out */,
-              int       n          /* in  */,
-              int       local_n    /* in  */,
-              MPI_Comm  comm       /* in  */) {
+/* -------------------------------------------
+Form 'ijk'
+  int       local_A[]   input
+  int       local_B[]   input
+  int       local_C[]   output
+  int       n           input
+  int       local_n     input
+  MPI_Comm  comm        input
+Functionality:
+  This function performs matrix multiplication
+  on a section of a (Called local_A). It
+  multiplies this section with the appropriate
+  section of the entirety of matrix B, and puts
+  the result into local_C
+*/
+void ijk_mult(int local_A[], int local_B[], int local_C[], int n, int local_n,
+              MPI_Comm comm) {
 
     int i, k, j, q;
     // printf("In IJK\n");
@@ -311,14 +369,23 @@ void ijk_mult(
     }
 }
 
-
-void ikj_mult(
-              int    local_A[]  /* in  */,
-              int    local_B[]  /* in  */,
-              int    local_C[]  /* out */,
-              int       n          /* in  */,
-              int       local_n    /* in  */,
-              MPI_Comm  comm       /* in  */) {
+/* -------------------------------------------
+Form 'ijk'
+  int       local_A[]   input
+  int       local_B[]   input
+  int       local_C[]   output
+  int       n           input
+  int       local_n     input
+  MPI_Comm  comm        input
+Functionality:
+  This function performs matrix multiplication
+  on a section of a (Called local_A). It
+  multiplies this section with the appropriate
+  section of the entirety of matrix B, and puts
+  the result into local_C
+*/
+void ikj_mult(int local_A[], int local_B[], int local_C[], int n, int local_n,
+              MPI_Comm comm) {
 
     int i, k, j;
     for (i = 0; i < local_n; i++) {
@@ -332,13 +399,23 @@ void ikj_mult(
 //    free(x);
 }
 
-void kij_mult(
-              int    local_A[]  /* in  */,
-              int    local_B[]  /* in  */,
-              int    local_C[]  /* out */,
-              int       n          /* in  */,
-              int       local_n    /* in  */,
-              MPI_Comm  comm       /* in  */) {
+/* -------------------------------------------
+Form 'kij'
+  int       local_A[]   input
+  int       local_B[]   input
+  int       local_C[]   output
+  int       n           input
+  int       local_n     input
+  MPI_Comm  comm        input
+Functionality:
+  This function performs matrix multiplication
+  on a section of a (Called local_A). It
+  multiplies this section with the appropriate
+  section of the entirety of matrix B, and puts
+  the result into local_C
+*/
+void kij_mult(int local_A[], int local_B[], int local_C[], int n, int local_n,
+              MPI_Comm comm) {
 
     int i, k, j;
     for (k = 0; k < n; k++) {
