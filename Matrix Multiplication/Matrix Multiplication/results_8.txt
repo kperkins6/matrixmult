@@ -1,0 +1,9 @@
+Running on 8 processors
+Elapsed Time = 626.868656
+
+Running on 8 processors
+Elapsed Time = 617.958366
+
+Running on 8 processors
+Elapsed Time = 619.423467
+

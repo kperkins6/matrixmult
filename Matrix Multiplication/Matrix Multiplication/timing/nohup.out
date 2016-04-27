@@ -1,0 +1,26 @@
+use flags -ijk -ikj or -kij to run tests on those forms
+or use the flag -all to run all forms (warning: will be long)
+rm: cannot remove ‘results/ijk20.out’: No such file or directory
+[mpiexec@o251-02] HYDU_sock_write (../../utils/sock/sock.c:417): write error (Bad file descriptor)
+[mpiexec@o251-02] HYD_pmcd_pmiserv_send_signal (../../pm/pmiserv/pmiserv_cb.c:252): unable to write data to proxy
+[mpiexec@o251-02] ui_cmd_cb (../../pm/pmiserv/pmiserv_pmci.c:174): unable to send signal downstream
+[mpiexec@o251-02] HYDT_dmxu_poll_wait_for_event (../../tools/demux/demux_poll.c:76): callback returned error status
+[mpiexec@o251-02] HYD_pmci_wait_for_completion (../../pm/pmiserv/pmiserv_pmci.c:500): error waiting for event
+[mpiexec@o251-02] main (../../ui/mpich/mpiexec.c:1125): process manager error waiting for completion
+rm: cannot remove ‘results/ijk16.out’: No such file or directory
+rm: cannot remove ‘results/ijk12.out’: No such file or directory
+rm: cannot remove ‘results/ijk8.out’: No such file or directory
+rm: cannot remove ‘results/ijk4.out’: No such file or directory
+rm: cannot remove ‘results/ijk1.out’: No such file or directory
+rm: cannot remove ‘results/ikj20.out’: No such file or directory
+rm: cannot remove ‘results/ikj16.out’: No such file or directory
+rm: cannot remove ‘results/ikj12.out’: No such file or directory
+rm: cannot remove ‘results/ikj8.out’: No such file or directory
+rm: cannot remove ‘results/ikj4.out’: No such file or directory
+rm: cannot remove ‘results/ikj1.out’: No such file or directory
+rm: cannot remove ‘results/kij20.out’: No such file or directory
+rm: cannot remove ‘results/kij16.out’: No such file or directory
+rm: cannot remove ‘results/kij12.out’: No such file or directory
+rm: cannot remove ‘results/kij8.out’: No such file or directory
+rm: cannot remove ‘results/kij4.out’: No such file or directory
+rm: cannot remove ‘results/kij1.out’: No such file or directory

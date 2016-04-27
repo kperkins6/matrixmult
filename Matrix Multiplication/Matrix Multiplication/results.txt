@@ -1,0 +1,11 @@
+Running on 12 processors
+Elapsed Time = 889.052613
+
+Running on 12 processors
+Elapsed Time = 809.514817
+
+[mpiexec@o251-02] Sending Ctrl-C to processes as requested
+[mpiexec@o251-02] Press Ctrl-C again to force abort
+Running on 4 processors
+Elapsed Time = 0.000008
+

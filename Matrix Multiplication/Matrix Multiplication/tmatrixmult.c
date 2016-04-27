@@ -1,5 +1,5 @@
 //
-//  matrixmult2.c
+//  matrixmult.c
 //  Matrix Multiplication
 //
 //  Created by Kevin Perkins on 3/28/16.
@@ -115,14 +115,16 @@ int main(void) {
    MPI_Barrier(MPI_COMM_WORLD);
 
    if (my_rank == 0) {
-      // printf("\n\n--------RESULT MATRIX-------\n");
-      // Print_matrix("matrix C", C, n, n);
-      printf("\n\n--------RESULT TIMING-------\n");
+      if (!strcmp(flag, "I")) {
+        printf("\n\n--------RESULT MATRIX-------\n");
+        Print_matrix("matrix C", C, n, n);
+        printf("\n\n--------RESULT TIMING-------\n");
+      }
       if (comm_sz > 1)
         printf("Running on %i processors\n", comm_sz);
       else  printf("Running on 1 processor\n");
       printf("Elapsed Time = %f\n", elapsed);
-      printf("\n\n\n\n");
+      printf("\n");
     }
     // free(local_A);
     // free(local_B);
@@ -151,16 +153,16 @@ void get_format(int*  n, int*  local_n, char* flag, int*  form, int my_rank,
     int local_ok = 1;
     char* temp = malloc(4*sizeof(char));
     if (my_rank == 0) {
-        printf("Enter the <form>\n");
+        // printf("Enter the <form>\n");
         scanf("%s", temp);
-        printf("Enter the <flag> ('I' or 'R')\n");
+        // printf("Enter the <flag> ('I' or 'R')\n");
         scanf("%s", flag);
         if (!strcmp(temp, "ijk"))
             *form = 1;
         else if (!strcmp(temp, "ikj"))
             *form = 2;
         else *form = 3;
-        printf("Enter the dimentions <n>\n");
+        // printf("Enter the dimentions <n>\n");
         scanf("%i", n);
 
     }
@@ -237,14 +239,14 @@ void Input_matrices(
 
         if (!strcmp(flag, "I") ) {
             if (my_rank == 0) {
-              printf("Enter the A matrix <A>\n");
+              // printf("Enter the A matrix <A>\n");
               int m_ai;
               int* m_x = malloc(sizeof( int));
               for (m_ai = 0; m_ai < (n*n); m_ai++) {
                   scanf("%i", m_x);
                   local_A[m_ai] = *m_x;
                 }
-                printf("Enter the B matrix <B>");
+                // printf("Enter the B matrix <B>");
                 for (m_ai = 0; m_ai < (n*n); m_ai++) {
                   scanf("%i", m_x);
                   local_B[m_ai] = *m_x;
